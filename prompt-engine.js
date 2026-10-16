@@ -5,7 +5,7 @@ document.getElementById('generate').onclick=()=>{
 const val=id=>$(id).value;const lines=[
 "HOANGGIA FURNITURE 3D AI — KHÓA TRỤC VÀ TÁI DỰNG 3D",
 "NỀN TẢNG: "+platforms[val('platform')],"SẢN PHẨM: "+val('kind'),"ĐỘ CHI TIẾT: "+val('lod'),
-"KÍCH THƯỚC XÁC NHẬN: "+(val('dims').trim()?val('dims').trim()+" mm":"CHƯA CÓ — không tự đoán số đo chính xác"),
+"KÍCH THƯỚC XÁC NHẬN (mm): Dài = "+(val("dimLength").trim()||"CHƯA XÁC NHẬN")+"; Rộng/Sâu = "+(val("dimWidth").trim()||"CHƯA XÁC NHẬN")+"; Cao = "+(val("dimHeight").trim()||"CHƯA XÁC NHẬN"),
 "ẢNH QUY CHIẾU: "+directions[val('refview')],"YÊU CẦU RIÊNG: "+(val('notes').trim()||"Theo ảnh nguồn"),"ĐỊNH DẠNG: "+val('format'),
 "",
 "1. BỐI CẢNH",
