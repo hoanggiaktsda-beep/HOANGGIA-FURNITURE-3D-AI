@@ -18,8 +18,10 @@
 .viewer-advanced{background:#121b15}
 @media(max-width:600px){.stage-top{height:39px;padding:0 10px;font-size:8px;letter-spacing:.06em}.stage-axis{top:10px;right:10px}#hgview{height:clamp(350px,53vh,590px)}.viewer-main-tools{gap:6px}.viewer-main-tools button,.viewer-main-tools .vfile{font-size:10px;padding:7px 9px}.stage-bottom{font-size:9px}}
 
-/* Official HA brand watermark: non-interactive and never blocks model controls */
-#hgview .viewport-watermark{position:absolute;inset:0;display:grid;place-items:center;z-index:1;pointer-events:none;user-select:none;overflow:hidden}
-#hgview .viewport-watermark img{width:clamp(150px,35%,360px);height:auto;max-height:55%;object-fit:contain;opacity:.075;filter:grayscale(1) brightness(1.8);pointer-events:none}
-#hgview .stage-axis,#hgview .stage-bottom,#hgview #hgmsg{z-index:2}
-@media(max-width:600px){#hgview .viewport-watermark img{width:45%;opacity:.06}}
+/* Discreet screenshot watermark: bottom-right, outside primary model focus */
+#hgview .viewport-watermark{position:absolute;inset:auto 18px 15px auto;display:flex;align-items:center;gap:7px;z-index:2;pointer-events:none;user-select:none;max-width:45%;opacity:.38;filter:grayscale(.35)}
+#hgview .viewport-watermark img{width:24px;height:24px;object-fit:contain;flex-shrink:0}
+#hgview .viewport-watermark span{color:#e0d4b9;font:700 10px/1 Manrope,system-ui,sans-serif;letter-spacing:.13em;white-space:nowrap;text-shadow:0 1px 4px #0b130f}
+#hgview .viewport-watermark strong{font-weight:800;color:#e6c78e}
+#hgview .stage-axis,#hgview .stage-bottom,#hgview #hgmsg{z-index:3}
+@media(max-width:600px){#hgview .viewport-watermark{right:10px;bottom:10px;gap:5px;opacity:.34}#hgview .viewport-watermark img{width:19px;height:19px}#hgview .viewport-watermark span{font-size:8px;letter-spacing:.07em}}
