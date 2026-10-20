@@ -59,4 +59,101 @@ toolbar.addEventListener('click',e=>{
   if(button.dataset.bg)setBg(button.dataset.bg);
   if(button.id==='hg-edges')setWire(!wire);
 });
-function resize(){renderer.setSize(root.clientWidth,root.clientHeight);camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(root);resize();function frame(){if(!model)return;const b=new T.Box3().setFromObject(model),c=b.getCenter(new T.Vector3());span=Math.max(b.getSize(new T.Vector3()).length(),.01);controls.target.copy(c);camera.position.copy(c).add(new T.Vector3(span*.9,span*.65,span));camera.near=Math.max(.001,span/1000);camera.far=Math.max(1000,span*1000);camera.updateProjectionMatrix();grid.position.y=0;grid.scale.setScalar(Math.max(.01,span/9));controls.update()}function view(x,y,z){if(!model)return;camera.position.copy(controls.target).add(new T.Vector3(x,y,z).normalize().multiplyScalar(span*1.5));controls.update()}const on=(id,fn)=>document.getElementById(id).addEventListener('click',fn);function autoUpright(){if(!model)return;model.rotation.set(0,0,0);model.position.set(0,0,0);model.updateMatrixWorld(true);const parts=[];model.traverse(o=>{if(!o.isMesh||!o.geometry)return;o.geometry.computeBoundingBox();const b=new T.Box3().setFromObject(o),size=b.getSize(new T.Vector3()),dims=[size.x,size.y,size.z].sort((a,b)=>b-a);if(dims[0]<1e-6)return;parts.push({box:b,center:b.getCenter(new T.Vector3()),size,area:dims[0]*dims[1],flat:dims[2]/dims[1]})});if(!parts.length){info.textContent='Không tìm thấy mesh để xác định mặt bàn.';return}parts.sort((a,b)=>b.area-a.area);const top=parts[0];const vals=[top.size.x,top.size.y,top.size.z];const thin=vals.indexOf(Math.min(...vals));const normal=[new T.Vector3(1,0,0),new T.Vector3(0,1,0),new T.Vector3(0,0,1)][thin];let rest=new T.Vector3();let count=0;for(const p of parts.slice(1)){rest.add(p.center);count++}if(count){rest.divideScalar(count);const towardLegs=rest.sub(top.center);if(towardLegs.dot(normal)>0)normal.negate()}const q=new T.Quaternion().setFromUnitVectors(normal,new T.Vector3(0,1,0));model.quaternion.copy(q);ground();info.textContent='Đã nhận diện mặt phẳng lớn nhất làm mặt bàn, xoay lên trên và đưa đáy chân về Y = 0. Nếu mesh không tách riêng, cần chỉnh mô hình nguồn.'} function ground(){if(!model)return;model.updateMatrixWorld(true);const box=new T.Box3().setFromObject(model);model.position.y-=box.min.y;model.updateMatrixWorld(true);frame();info.textContent='Đã đưa đáy mô hình về sàn Y = 0 (cốt ±0.000).'}function rotate(axis,angle){if(!model)return;model.rotation[axis]+=angle;ground()}on('vfloor',ground);on('vfix',()=>{if(!model)return;autoUpright()});on('vxplus',()=>rotate('x',Math.PI/2));on('vxminus',()=>rotate('x',-Math.PI/2));on('vzplus',()=>rotate('z',Math.PI/2));on('vzminus',()=>rotate('z',-Math.PI/2));on('vrot',()=>rotate('x',Math.PI/2));on('vreset',()=>{if(!model)return;model.rotation.set(0,0,0);model.position.set(0,0,0);ground()});on('vsave',async()=>{if(!model)return;try{info.textContent='Đang xuất GLB...';const data=await new GLTFExporter().parseAsync(model,{binary:true});const link=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));link.href=u;link.download='HOANGGIA_MODEL_DA_CHINH_HUONG.glb';link.click();setTimeout(()=>URL.revokeObjectURL(u),2000);info.textContent='Đã xuất GLB với hướng mô hình hiện tại.'}catch(e){info.textContent='Không xuất được GLB: '+e.message}});on('vfit',frame);on('vfront',()=>view(0,0,1));on('vtop',()=>view(0,1,.001));on('vside',()=>view(1,0,0));on('vgrid',()=>grid.visible=!grid.visible);on('vwire',()=>setWire(!wire));on('vfull',()=>document.fullscreenElement?document.exitFullscreen():root.requestFullscreen?.());document.getElementById('hgfile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;info.textContent='Đang mở '+file.name;try{if(model){clearEdges();scene.remove(model)}if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(file);const ext=file.name.split('.').pop().toLowerCase();if(ext==='glb'||ext==='gltf')model=(await new GLTFLoader().loadAsync(url)).scene;else if(ext==='obj')model=await new OBJLoader().loadAsync(url);else if(ext==='stl')model=new T.Mesh(await new STLLoader().loadAsync(url),new T.MeshStandardMaterial({color:0xb9c0cb,side:T.DoubleSide}));else throw Error('Định dạng chưa hỗ trợ');scene.add(model);document.getElementById('hgmsg').style.display='none';setWire(false);makeEdges();autoUpright();let n=0;model.traverse(o=>{if(o.isMesh)n++});info.textContent=file.name+' · '+n+' mesh · Kéo để xoay, chụm để zoom.'}catch(err){info.textContent='Lỗi mở tệp: '+err.message+'; nên dùng GLB để nhúng đủ vật liệu.'}});setBg('brand');function tick(){requestAnimationFrame(tick);controls.update();renderer.render(scene,camera)}tick();
+function resize(){renderer.setSize(root.clientWidth,root.clientHeight);camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(root);resize();function frame(){if(!model)return;const b=new T.Box3().setFromObject(model),c=b.getCenter(new T.Vector3());span=Math.max(b.getSize(new T.Vector3()).length(),.01);controls.target.copy(c);camera.position.copy(c).add(new T.Vector3(span*.9,span*.65,span));camera.near=Math.max(.001,span/1000);camera.far=Math.max(1000,span*1000);camera.updateProjectionMatrix();grid.position.y=0;grid.scale.setScalar(Math.max(.01,span/9));controls.update()}function view(x,y,z){if(!model)return;camera.position.copy(controls.target).add(new T.Vector3(x,y,z).normalize().multiplyScalar(span*1.5));controls.update()}const on=(id,fn)=>document.getElementById(id).addEventListener('click',fn);function autoUpright(){if(!model)return;model.rotation.set(0,0,0);model.position.set(0,0,0);model.updateMatrixWorld(true);const parts=[];model.traverse(o=>{if(!o.isMesh||!o.geometry)return;o.geometry.computeBoundingBox();const b=new T.Box3().setFromObject(o),size=b.getSize(new T.Vector3()),dims=[size.x,size.y,size.z].sort((a,b)=>b-a);if(dims[0]<1e-6)return;parts.push({box:b,center:b.getCenter(new T.Vector3()),size,area:dims[0]*dims[1],flat:dims[2]/dims[1]})});if(!parts.length){info.textContent='Không tìm thấy mesh để xác định mặt bàn.';return}parts.sort((a,b)=>b.area-a.area);const top=parts[0];const vals=[top.size.x,top.size.y,top.size.z];const thin=vals.indexOf(Math.min(...vals));const normal=[new T.Vector3(1,0,0),new T.Vector3(0,1,0),new T.Vector3(0,0,1)][thin];let rest=new T.Vector3();let count=0;for(const p of parts.slice(1)){rest.add(p.center);count++}if(count){rest.divideScalar(count);const towardLegs=rest.sub(top.center);if(towardLegs.dot(normal)>0)normal.negate()}const q=new T.Quaternion().setFromUnitVectors(normal,new T.Vector3(0,1,0));model.quaternion.copy(q);ground();info.textContent='Đã nhận diện mặt phẳng lớn nhất làm mặt bàn, xoay lên trên và đưa đáy chân về Y = 0. Nếu mesh không tách riêng, cần chỉnh mô hình nguồn.'} function ground(){if(!model)return;model.updateMatrixWorld(true);const box=new T.Box3().setFromObject(model);model.position.y-=box.min.y;model.updateMatrixWorld(true);frame();info.textContent='Đã đưa đáy mô hình về sàn Y = 0 (cốt ±0.000).'}function rotate(axis,angle){if(!model)return;model.rotation[axis]+=angle;ground()}on('vfloor',ground);on('vfix',()=>{if(!model)return;autoUpright()});on('vxplus',()=>rotate('x',Math.PI/2));on('vxminus',()=>rotate('x',-Math.PI/2));on('vzplus',()=>rotate('z',Math.PI/2));on('vzminus',()=>rotate('z',-Math.PI/2));on('vrot',()=>rotate('x',Math.PI/2));on('vreset',()=>{if(!model)return;model.rotation.set(0,0,0);model.position.set(0,0,0);ground()});on('vsave',async()=>{if(!model)return;try{info.textContent='Đang xuất GLB...';const data=await new GLTFExporter().parseAsync(model,{binary:true});const link=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));link.href=u;link.download='HOANGGIA_MODEL_DA_CHINH_HUONG.glb';link.click();setTimeout(()=>URL.revokeObjectURL(u),2000);info.textContent='Đã xuất GLB với hướng mô hình hiện tại.'}catch(e){info.textContent='Không xuất được GLB: '+e.message}});on('vfit',frame);on('vfront',()=>view(0,0,1));on('vtop',()=>view(0,1,.001));on('vside',()=>view(1,0,0));on('vgrid',()=>grid.visible=!grid.visible);on('vwire',()=>setWire(!wire));on('vfull',()=>document.fullscreenElement?document.exitFullscreen():root.requestFullscreen?.());const modelFileInput=document.getElementById('hgfile');
+const supportedModelTypes=new Set(['glb','gltf','obj','stl']);
+async function openModelFile(file){
+  if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!supportedModelTypes.has(ext)){
+    info.textContent='Định dạng không hỗ trợ: '+file.name+'. Hãy dùng GLB, GLTF, OBJ hoặc STL.';
+    return;
+  }
+  info.textContent='Đang tải mô hình: '+file.name+'…';
+  const objectUrl=URL.createObjectURL(file);
+  try{
+    let nextModel;
+    if(ext==='glb'||ext==='gltf')nextModel=(await new GLTFLoader().loadAsync(objectUrl)).scene;
+    else if(ext==='obj')nextModel=await new OBJLoader().loadAsync(objectUrl);
+    else nextModel=new T.Mesh(await new STLLoader().loadAsync(objectUrl),new T.MeshStandardMaterial({color:0xb9c0cb,side:T.DoubleSide}));
+    if(model){clearEdges();scene.remove(model)}
+    model=nextModel;
+    scene.add(model);
+    document.getElementById('hgmsg').style.display='none';
+    setWire(false);
+    makeEdges();
+    autoUpright();
+    let count=0;
+    model.traverse(o=>{if(o.isMesh)count++});
+    info.textContent='Đã mở '+file.name+' · '+count+' mesh · Kéo để xoay, chụm để phóng to.';
+  }catch(err){
+    info.textContent='Không mở được '+file.name+': '+err.message+'. Nếu có file vật liệu/texture rời, hãy xuất sang GLB.';
+  }finally{
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+modelFileInput.addEventListener('change',e=>{
+  const file=e.target.files?.[0];
+  void openModelFile(file);
+  e.target.value='';
+});
+const modelDropTarget=root.closest('.model-stage')||root;
+const modelDropOverlay=document.createElement('div');
+modelDropOverlay.className='hg-drop-overlay';
+modelDropOverlay.setAttribute('aria-hidden','true');
+modelDropOverlay.innerHTML='<strong>↓ Thả model 3D vào đây</strong><span>GLB · GLTF · OBJ · STL</span>';
+root.appendChild(modelDropOverlay);
+css.textContent+=String.raw`
+.model-stage #hgview .hg-drop-overlay{position:absolute;inset:0;z-index:8;display:none;align-content:center;justify-items:center;gap:9px;background:#101713e8;border:3px dashed #d2af73;color:#f4e3c0;pointer-events:none;text-align:center;padding:16px}
+.model-stage #hgview .hg-drop-overlay strong{font:750 clamp(16px,3vw,24px) Manrope,sans-serif}
+.model-stage #hgview .hg-drop-overlay span{font:600 12px 'DM Sans',sans-serif;color:#b9c8bb}
+.model-stage.hg-drop-active #hgview .hg-drop-overlay{display:grid}
+`;
+let modelDragDepth=0;
+function containsModelFiles(event){
+  return Array.from(event.dataTransfer?.types||[]).includes('Files');
+}
+function resetModelDrop(){
+  modelDragDepth=0;
+  modelDropTarget.classList.remove('hg-drop-active');
+}
+modelDropTarget.addEventListener('dragenter',event=>{
+  if(!containsModelFiles(event))return;
+  event.preventDefault();
+  modelDragDepth++;
+  modelDropTarget.classList.add('hg-drop-active');
+});
+modelDropTarget.addEventListener('dragover',event=>{
+  if(!containsModelFiles(event))return;
+  event.preventDefault();
+  if(event.dataTransfer)event.dataTransfer.dropEffect='copy';
+  modelDropTarget.classList.add('hg-drop-active');
+});
+modelDropTarget.addEventListener('dragleave',event=>{
+  if(!containsModelFiles(event))return;
+  modelDragDepth=Math.max(0,modelDragDepth-1);
+  if(modelDragDepth===0)resetModelDrop();
+});
+modelDropTarget.addEventListener('drop',event=>{
+  if(!containsModelFiles(event))return;
+  event.preventDefault();
+  event.stopPropagation();
+  resetModelDrop();
+  const files=Array.from(event.dataTransfer?.files||[]);
+  const file=files.find(item=>supportedModelTypes.has(item.name.split('.').pop().toLowerCase()));
+  if(!file){
+    info.textContent='Chưa có model 3D hợp lệ. Kéo thả tệp GLB, GLTF, OBJ hoặc STL (không hỗ trợ ZIP).';
+    return;
+  }
+  void openModelFile(file);
+});
+window.addEventListener('dragover',event=>{
+  if(containsModelFiles(event))event.preventDefault();
+});
+window.addEventListener('drop',event=>{
+  if(containsModelFiles(event)){
+    event.preventDefault();
+    resetModelDrop();
+  }
+});
+window.addEventListener('dragend',resetModelDrop);
+;setBg('brand');function tick(){requestAnimationFrame(tick);controls.update();renderer.render(scene,camera)}tick();
